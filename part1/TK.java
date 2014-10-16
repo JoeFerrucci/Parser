@@ -21,6 +21,7 @@ public enum TK {
     LPAREN,   // (
     RPAREN,   // )
     PLUS,     // +
+    MINUS,    // -
     TIMES,    // *
     DIVIDE,   // /
 

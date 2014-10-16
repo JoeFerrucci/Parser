@@ -65,9 +65,11 @@ public class Scan {
 
         while(true) {
 // QUESTION 1: What is purpose of putback?
+            /* It determines whether or not to put the character back into the stream. */
 
 // QUESTION 2: What are the values of putback and c just before the identifier
 //             'hello' is returned from the input 'hello*45'?
+            /* putback is true, c is times */
 
             if( putback) {
                 putback = false;
@@ -92,10 +94,15 @@ public class Scan {
                         return ccase1(')',TK.RPAREN);
                     case '*':
                         return ccase1('*',TK.TIMES);
+                    case '+':
+                        return ccase1('+', TK.PLUS);
                     case '=':
                         return ccase1('=',TK.EQ);
 
 // QUESTION 3:  What does the following case and the code in it do?
+            /* You see a token but you don't know if its one thing or another.
+                For instance, you see a slash, but it can be division or not-equal-to.
+            */
 
                     case '/':
                         return ccase1or2('/','=',TK.DIVIDE,TK.NE);
