@@ -25,7 +25,7 @@ public class Parser {
 
     private void block() {
         // you'll need to add some code here
-        if(is(TK.VAR)) 
+        if( is(TK.VAR) || is(TK.none) ) 
         {
             declarations();
         }
@@ -43,22 +43,22 @@ public class Parser {
     // you'll need to add a bunch of methods here
     private void statement_list() {
         statement();
-        while( is(TK.ASSIGN) || is(TK.PRINT) || is(TK.IF) || is(TK.DO) || is(TK.FA) )
+        while( is(TK.ID) || is(TK.ASSIGN) || is(TK.PRINT) || is(TK.IF) || is(TK.DO) || is(TK.FA) || is(TK.none) )
         {
             statement();
         }
     }
 
     private void statement() {
-        if( is(TK.ASSIGN) )
+        if( is(TK.ID) || is(TK.ASSIGN) || is(TK.none) )
             assignment();
-        else if( is(TK.PRINT) )
-            print();
-        else if( is(TK.IF) )
+        else if( is(TK.PRINT) || is(TK.none) )
+          print();
+        else if( is(TK.IF) || is(TK.none) )
           pif();
-        else if( is(TK.DO) )
+        else if( is(TK.DO) || is(TK.none) )
           pdo();
-        else if( is(TK.FA) )
+        else if( is(TK.FA) || is(TK.none) )
           fa();
     }
 
@@ -120,7 +120,7 @@ public class Parser {
             scan();
             guarded_command();
         }
-        if( is(TK.ELSE) )
+        if( is(TK.ELSE) || is(TK.none) )
         {
             mustbe(TK.ELSE);
             commands();
@@ -139,7 +139,7 @@ public class Parser {
 
     private void expression() {
         simple();
-        if( is(TK.EQ) || is(TK.LT) || is(TK.GT) || is(TK.NE) || is(TK.LE) || is(TK.GE) )
+        if( is(TK.EQ) || is(TK.LT) || is(TK.GT) || is(TK.NE) || is(TK.LE) || is(TK.GE) || is(TK.none) )
         {
             relop();
             simple();
@@ -165,20 +165,19 @@ public class Parser {
         }
     }
 
-
     private void factor() {
-        if(is(TK.LPAREN)) 
+        if(is(TK.ID))
+          scan();
+        else if (is(TK.NUM))
+          scan();
+        else if(is(TK.LPAREN)) 
         {
             mustbe(TK.LPAREN);
             expression();
             mustbe(TK.RPAREN);
-        } 
-        else if(is(TK.ID))
-            scan();
-        else if(is(TK.NUM))
-            scan();
+        }
         else
-            parse_error("factor ERROR");
+            parse_error("factor");
     }
 
     private void relop() {
