@@ -25,6 +25,11 @@ public class Parser {
 
     private void block() {
         // you'll need to add some code here
+        if(is(TK.VAR)) 
+        {
+            declarations();
+        }
+        statement_list();
     }
 
     private void declarations() {
@@ -36,6 +41,180 @@ public class Parser {
     }
 
     // you'll need to add a bunch of methods here
+    private void statement_list() {
+        statement();
+        while( is(TK.ASSIGN) || is(TK.PRINT) || is(TK.IF) || is(TK.DO) || is(TK.FA) )
+        {
+            statement();
+        }
+    }
+
+    private void statement() {
+        if( is(TK.ASSIGN) )
+            assignment();
+        else if( is(TK.PRINT) )
+            print();
+        else if( is(TK.IF) )
+          pif();
+        else if( is(TK.DO) )
+          pdo();
+        else if( is(TK.FA) )
+          fa();
+    }
+
+    private void assignment() {
+        if(is(TK.ID))
+            scan();
+        else
+            parse_error("assignment ERROR");
+        if(is(TK.ASSIGN))
+            scan();
+        else
+            parse_error("assignment ERROR");
+        expression();
+    }
+
+    private void print() {
+        mustbe(TK.PRINT);
+        expression();
+    }
+
+    private void pif() {
+        mustbe(TK.IF);
+        guarded_commands();
+        mustbe(TK.FI);
+    }
+
+    private void pdo() {
+        mustbe(TK.DO);
+        guarded_commands();
+        mustbe(TK.OD);
+    }
+
+    private void fa() {
+        mustbe(TK.FA);
+        if(is(TK.ID))
+            scan();
+        else 
+            parse_error("fa ERROR");
+        if(is(TK.ASSIGN))
+            scan();
+        else 
+            parse_error("fa ERROR");
+        expression();
+        mustbe(TK.TO);
+        expression();
+        if(is(TK.ST))
+        {
+            mustbe(TK.ST);
+            expression();
+        }
+        commands();
+        mustbe(TK.AF);
+    }
+
+    private void guarded_commands() {
+        guarded_command();
+        while( is(TK.BOX) )
+        {
+            scan();
+            guarded_command();
+        }
+        if( is(TK.ELSE) )
+        {
+            mustbe(TK.ELSE);
+            commands();
+        }
+    }
+
+    private void guarded_command() {
+        expression();
+        commands();
+    }
+
+    private void commands() {
+        mustbe(TK.ARROW);
+        block();
+    }
+
+    private void expression() {
+        simple();
+        if( is(TK.EQ) || is(TK.LT) || is(TK.GT) || is(TK.NE) || is(TK.LE) || is(TK.GE) )
+        {
+            relop();
+            simple();
+        }
+
+    }
+
+    private void simple() {
+        term();
+        while( is(TK.PLUS) || is(TK.MINUS) )
+        {
+            addop();
+            term();
+        }
+    }
+
+    private void term() {
+        factor();
+        while( is(TK.TIMES) || is(TK.DIVIDE) )
+        {
+            multop();
+            factor();
+        }
+    }
+
+
+    private void factor() {
+        if(is(TK.LPAREN)) 
+        {
+            mustbe(TK.LPAREN);
+            expression();
+            mustbe(TK.RPAREN);
+        } 
+        else if(is(TK.ID))
+            scan();
+        else if(is(TK.NUM))
+            scan();
+        else
+            parse_error("factor ERROR");
+    }
+
+    private void relop() {
+        if(is(TK.EQ))
+            scan();
+        else if(is(TK.LT))
+            scan();
+        else if(is(TK.GT))
+            scan();
+        else if(is(TK.NE))
+            scan();
+        else if(is(TK.LE))
+            scan();
+        else if(is(TK.GE))
+            scan();
+        else
+            parse_error("relop ERROR");
+    }
+
+    private void addop() {
+        if(is(TK.PLUS))
+            scan();
+        else if(is(TK.MINUS))
+            scan();
+        else
+            parse_error("addop ERROR");
+    }
+
+    private void multop() {
+        if(is(TK.TIMES))
+            scan();
+        else if (is(TK.DIVIDE))
+            scan();
+        else
+            parse_error("multop ERROR");
+    }
 
     // is current token what we want?
     private boolean is(TK tk) {
