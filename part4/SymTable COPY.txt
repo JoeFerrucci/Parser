@@ -1,0 +1,176 @@
+/*SymTable.java Joe Ferrucci*/
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+
+public class SymTable {
+
+    // Stack (Deque) of Lists to hold each <block>
+    /* because Java Docs say a more complete and consistent set of LIFO stack operations is provided by the Deque interface*/
+    private Deque<ArrayList<Token>> stack;
+    private Deque<Variable> varTable;
+
+    SymTable() 
+    {
+        stack = new ArrayDeque<ArrayList<Token>>();
+        varTable = new ArrayDeque<Variable>();
+    }
+
+    /* Prints The Table for Part 4 */
+    public void outputTable()
+    {
+        // System.err.println("\nCurrent Var Table Size = " + varTable.size() + "\n");
+        for (Variable var : varTable)
+        {
+            /* Var Name: */
+            String varName = var.token.string;
+            System.err.println(varName + " ");
+
+            /* Declared On: */
+            String declaredOnAtNestingDepth = "   declared on line " + var.token.lineNumber + " at nesting depth " + var.token.nestingDepth;
+            System.err.println(declaredOnAtNestingDepth);
+
+            /* Assigned To On: */
+            String assignedToOnString = "   assigned to on:";
+            System.err.println(assignedToOnString);
+
+            /* Used On: */
+            String usedOnString = " used on:";
+            for(Occurrence occ : var.usages)
+            {
+                usedOnString += ("  " + occ.lineNumber);
+            }
+            System.err.println(usedOnString);
+
+
+        }
+    }
+
+    // Start of new block; push.
+    public void startOfBlock() 
+    {
+        stack.push(new ArrayList<Token>());
+    }
+
+    // End of block; pop.
+    public void endOfBlock() 
+    {
+        stack.pop();
+    }
+
+    /* A new variable declaration has been discovered in parsing */
+    public void newDeclaration(Token tok) 
+    {
+        boolean alreadyDeclared = false; // redeclaring is false
+
+        // Added for Part 4 (for Nesting Depth)
+        tok.nestingDepth = stack.size()-1;
+
+        // Iterate through current block's stackframe (ArrayList)
+        // Searches all Tokens in current block. 
+        for(Token t : stack.peek()) 
+        {
+            if(t.string.equals(tok.string)) 
+            {
+                alreadyDeclared = true; // redeclaring is true
+            }
+        }
+
+        // If alreadyDeclared: Print Error message 
+        // Else: add into current block's symbol table (an ArrayList)
+        if (alreadyDeclared) 
+        {
+            System.err.println("variable " + tok.string + 
+                " is redeclared on line " + tok.lineNumber);
+        } 
+        else 
+        {
+            // New variable declared for first time!!
+            // pop last ArrayList, then add(tok) to it, 
+            // then the language auto places it back on stack.
+            stack.peek().add(tok);
+            varTable.add(new Variable(tok)); // Initial save to output table
+            varTable.getLast().usages.add(new Occurrence(tok.lineNumber, 1));
+        }
+    }
+
+    /* Called by isDeclared() hence, its private */
+    private boolean isDeclaredImplementation(Token tok) 
+    {
+        int stackCheck = stack.size();
+        // These 2 for-loops combined will: SEARCH THE ENTIRE STACK
+        // Iterate through entire stack of ArrayLists 
+        for(ArrayList<Token> list : stack) 
+        {
+            // For each token inside stack-frame (ArrayList)
+            for(Token t : list) 
+            {
+                // If declared already:
+                if(tok.string.equals(t.string))
+                {
+                // Added for Part 4
+                // Check for usage or assignment:
+                    // index of last element in varTable
+                    for(Variable v : varTable)
+                    {
+                        if (!v.token.string.equals(tok.string))
+                        {
+                            // do nothing.
+                        }
+                        else if(stackCheck >= v.token.nestingDepth)
+                        {
+                            v.assignments.add(new Occurrence(tok.lineNumber, 1));
+                        }
+
+                    }
+                    // if ()
+                // End of Part 4
+                    return true; // yes, it's been declared before.
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /* Just an Interface Function for isDeclaredImplementation() */
+    public void isDeclared(Token tok) 
+    {
+        // it has not been declared, therefore say undeclared.
+        if (isDeclaredImplementation(tok) == false) 
+        {
+            System.err.println("undeclared variable " + tok.string + 
+                                " on line " + tok.lineNumber);
+            System.exit(1);
+        } 
+        // it HAS BEEN declared, therefore update assignments/usages.
+        else 
+        {
+            // start here.
+        }
+    }
+
+
+
+    // public void addAssignmentOccurrence(Token tok) 
+    // {
+    //     // go thru every Variable in the varTable,
+    //     for(Variable var : varTable) {
+    //         // and if v.tok is the same as the current token,
+    //         if(var.tok.string.equals(tok.string)) {
+    //             // then I already have a Variable for this.
+    //             // So, iterate over all assignments,
+    //             for(Occurrence occ : var.assignments) {
+    //                 // and check to see if lineNumbers match
+    //                 // for this var. If they do match,
+    //                 if(occ.lineNumber == tok.lineNumber) {
+    //                     // increase the lineCount.
+    //                     occ.lineCount++;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+}
+
