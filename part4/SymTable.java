@@ -1,154 +1,333 @@
 /*SymTable.java Joe Ferrucci*/
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.ListIterator;
+import java.util.*;
 
 public class SymTable {
 
     // Stack (Deque) of Lists to hold each <block>
     /* because Java Docs say a more complete and consistent set of LIFO stack operations is provided by the Deque interface*/
-    private Deque<ArrayList<Token>> stack;
+    Stack<LinkedList<Token>> block;
+    Vector<Variable> listOfDeclarations;
+    Vector<String> findIndexByName;
+    Vector<LinkedList<Token>> listOfAssignedToVars;
+    Vector<LinkedList<Token>> listOfUsedVars;
+
 
     SymTable() 
     {
-        stack = new ArrayDeque<ArrayList<Token>>();
+        block = new Stack<LinkedList<Token>>();
+        listOfDeclarations = new Vector<Variable>();
+        findIndexByName = new Vector<String>();
+        listOfAssignedToVars = new Vector<LinkedList<Token>>();
+        listOfUsedVars = new Vector<LinkedList<Token>>();
     }
+
 
     /* Prints The Table for Part 4 */
     public void outputTable()
     {
-        // System.err.println("\nCurrent Var Table Size = " + varTable.size() + "\n");
-        // for (Variable var : varTable)
-        // {
-        //     /* Var Name: */
-        //     String varName = var.token.string;
-        //     System.err.println(varName + " ");
+    // System.err.println("\nCurrent Var Table Size = " + varTable.size() + "\n");
+    // for (Variable var : varTable)
+    // {
+    //     /* Var Name: */
+    //     String varName = var.token.string;
+    //     System.err.println(varName + " ");
 
-        //     /* Declared On: */
-        //     String declaredOnAtNestingDepth = " declared on line " + var.token.lineNumber + " at nesting depth " + var.token.nestingDepth;
-        //     System.err.println(declaredOnAtNestingDepth);
+    //     /* Declared On: */
+    //     String declaredOnAtNestingDepth = " declared on line " + var.token.lineNumber + " at nesting depth " + var.token.nestingDepth;
+    //     System.err.println(declaredOnAtNestingDepth);
 
-        //     /* Assigned To On: */
-        //     String assignedToOnString = " assigned to on:";
-        //     System.err.println(assignedToOnString);
+    //     /* Assigned To On: */
+    //     String assignedToOnString = " assigned to on:";
+    //     System.err.println(assignedToOnString);
 
-        //     /* Used On: */
-        //     String usedOnString = " used on:";
-        //     for(Occurrence occ : var.usages)
-        //     {
-        //         usedOnString += (" " + occ.lineNumber);
-        //     }
-        //     System.err.println(usedOnString);
-        // }
+    //     /* Used On: */
+    //     String usedOnString = " used on:";
+    //     for(Occurrence occ : var.usages)
+    //     {
+    //         usedOnString += (" " + occ.lineNumber);
+    //     }
+    //     System.err.println(usedOnString);
+    // }
+        for(int i = 0; i < findIndexByName.size(); i++)
+        {
+            System.err.println(findIndexByName.get(i));
+            System.err.println("  declared on line " + listOfDeclarations.get(i).lineNumber + " at nesting depth " + (listOfDeclarations.get(i).nestDepth - 1));
+            ListIterator<Token> itr = listOfAssignedToVars.get(i).listIterator();
+            Token test;
+            Token test2;
+            Token compare;
+            int count = 1;
+            if(itr.hasNext())
+            {
+                System.err.print("  assigned to on:");
+                test2 = test = itr.next();
+                while(itr.hasNext())
+                {
+                    System.err.print(" " + test.lineNumber);
+                    compare = itr.next();
+                    count = 1;
+                    while(compare.lineNumber == test.lineNumber)
+                    {
+                        count++;
+                        if(itr.hasNext())
+                        {
+                            compare = itr.next();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if(count > 1)
+                    {
+                        System.err.print("(" + count + ")");
+                    }
+                    test2 = test;
+                    test = compare;
+                }
+
+                if(count > 1 && test2.lineNumber == test.lineNumber)
+                {
+                    System.err.println("");
+                }
+                else
+                {
+                    System.err.println(" " + test.lineNumber);
+                }
+
+                }
+            else
+            {
+                System.err.println("  never assigned");
+            }
+
+            ListIterator<Token> itr2 = listOfUsedVars.get(i).listIterator();
+            if(itr2.hasNext())
+            {
+                System.err.print("  used on:");
+                test = test2 = itr2.next();
+                count = 1;
+
+                while(itr2.hasNext())
+                {
+                    System.err.print(" " + test2.lineNumber);
+                    compare = itr2.next();
+                    count = 1;
+
+                    while(compare.lineNumber == test2.lineNumber)
+                    {
+                        count++;
+                        if(itr2.hasNext())
+                        {
+                            compare = itr2.next();
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+
+                    if(count > 1)
+                    {
+                        System.err.print("(" + count + ")");
+                    }
+
+                    test = test2;
+                    test2 = compare;
+                }
+
+                if(count > 1 && test2.lineNumber == test.lineNumber)
+                {
+                    System.err.println("");
+                }
+                else
+                {
+                    System.err.println(" " + test2.lineNumber);
+                }
+            }
+            else
+            {
+                System.err.println("  never used");
+            }
+          }
     }
 
+
     // Start of new block; push.
-    public void startOfBlock() 
-    {
-        stack.push(new ArrayList<Token>());
+    public void startOfBlock() {
+        block.push(new LinkedList<Token>());
     }
 
     // End of block; pop.
-    public void endOfBlock() 
-    {
-        stack.pop();
+    public void endOfBlock() {
+        block.pop();
     }
 
     /* A new variable declaration has been discovered in parsing */
-    public void newDeclaration(Token tok) 
-    {
-        boolean alreadyDeclared = false; // redeclaring is false
-
-        // Added for Part 4 (for Nesting Depth)
-        tok.nestingDepth = stack.size()-1;
-
+    public void newDeclaration(Token tok) {
+        int alreadyDeclared = 0; // redeclaring is false
+        int index = 0;
+        Token test;
         // Iterate through current block's stackframe (ArrayList)
         // Searches all Tokens in current block. 
-        ArrayList<Token> currBlockList = stack.peek();
-        ListIterator<Token> iter = currBlockList.listIterator(); 
-        while(iter.hasNext())
+        LinkedList<Token> ptr = block.peek();
+        ListIterator<Token> itr = ptr.listIterator();
+        while(itr.hasNext())
         {
-            if(iter.next().string.equals(tok.string))
+            index = itr.nextIndex();
+            test = itr.next();
+            // If alreadyDeclared: Print Error message 
+            // Else: add into current block's symbol table (an ArrayList)
+            if(test.string.equals(tok.string))
             {
-                alreadyDeclared = true; // redeclaring is true
+                System.err.println("variable " +tok.string+ " is redeclared on line " +tok.lineNumber);
+                alreadyDeclared = 1; // redeclaring is true
+                break;
             }
-        }
-
-        // If alreadyDeclared: Print Error message 
-        // Else: add into current block's symbol table (an ArrayList)
-        if (alreadyDeclared) 
-        {
-            System.err.println("variable " + tok.string + 
-                " is redeclared on line " + tok.lineNumber);
-        }
-        else 
-        {
-            // New variable declared for first time!!
-            // pop last ArrayList, then add(tok) to it, 
-            // then the language auto places it back on stack.
-            stack.peek().add(tok);
-        }
     }
 
+    // New variable declared for first time!!
+    // pop last ArrayList, then add(tok) to it, 
+    // then the language auto places it back on stack.
+    if( alreadyDeclared == 0)
+    {
+        ptr.add(tok);
+        findIndexByName.add(tok.string);
+        listOfAssignedToVars.add(new LinkedList<Token>());
+        listOfUsedVars.add(new LinkedList<Token>());
+        listOfDeclarations.add(new Variable(tok.lineNumber, block.size()));
+    }
+    }
 
     /* isDeclared() Function */
-    public void isDeclared(Token tok) 
-    {
-        boolean isDeclared = false;
-        // These 2 for-loops combined will: SEARCH THE ENTIRE STACK
+    public int isDeclared(Token tok) {
+        Stack<LinkedList<Token>> tempblock = new Stack<LinkedList<Token>>();
+        int alreadyDeclared = 0;
+        int index = 0;
+        Token test;
+        int blockcheck;
+
+        // These loops combined will: SEARCH THE ENTIRE STACK
         // Iterate through entire stack of ArrayLists
-        for(ArrayList<Token> list : stack) 
+        while(!block.empty())
         {
-            // For each token inside stack-frame (ArrayList)
-            for(Token t : list) 
+            blockcheck = block.size();
+            LinkedList<Token> ptr = block.peek();
+            ListIterator<Token> itr = ptr.listIterator();
+            while(itr.hasNext())
             {
+                index = itr.nextIndex();
+                test = itr.next();
                 // If declared already:
-                if(tok.string.equals(t.string))
+                if(test.string.equals(tok.string))
                 {
-                    // Added for Part 4
-                    // End of Part 4
-                    isDeclared = true; // yes, it's been declared before.
+                    alreadyDeclared = 1; // yes, it's been declared before.
+                    int indexptr = findIndexByName.lastIndexOf(tok.string);
+
+                    while(true) 
+                    {
+                        if(indexptr < 0)
+                        {
+                            break;
+                        }
+
+                        if(blockcheck >= listOfDeclarations.get(indexptr).nestDepth)
+                        {
+                            listOfAssignedToVars.get(indexptr).add(tok);
+                            break;
+                        }
+                        else
+                        {
+                            indexptr = findIndexByName.lastIndexOf(tok.string, indexptr - 1);
+                        }
+                    }
+                    break;
                 }
             }
+
+            if(alreadyDeclared == 1)
+            {
+                break;
+            }
+            tempblock.push(block.pop());
+        }
+        // it has not been declared yet, therefore say undeclared.
+        if( alreadyDeclared == 0)
+        {
+            System.err.println("undeclared variable " + tok.string + " on line " + tok.lineNumber);
+            System.exit(1);
+        }
+        while(!tempblock.empty())
+        {
+            block.push(tempblock.pop());
+        }
+        return index;
+    }
+
+    /* isUsed() Function */
+    public void isUsed(Token tok) 
+    {
+        Stack<LinkedList<Token>> tempblock = new Stack<LinkedList<Token>>();
+        int alreadyDeclared = 0;
+        int index = 0;
+        Token test;
+        int blockcheck;
+
+        // These loops combined will: SEARCH THE ENTIRE STACK
+        // Iterate through entire stack of ArrayLists
+        while(!block.empty())
+        {
+            blockcheck = block.size();
+            LinkedList<Token> ptr = block.peek();
+            ListIterator<Token> itr = ptr.listIterator();
+            while(itr.hasNext())
+            {
+                index = itr.nextIndex();
+                test = itr.next();
+                // If being used again:
+                if(test.string.equals(tok.string))
+                {
+                    int indexptr = findIndexByName.lastIndexOf(tok.string);
+                    while(true) 
+                    {
+                        if(indexptr < 0)
+                        {
+                            break;
+                        }
+                        if(blockcheck >= listOfDeclarations.get(indexptr).nestDepth)
+                        {
+                            listOfUsedVars.get(indexptr).add(tok);
+                            break;
+                        }
+                        else
+                        {
+                            indexptr = findIndexByName.lastIndexOf(tok.string, indexptr - 1);
+                        }
+                    }
+                    alreadyDeclared = 1;
+                    break;
+                }
+            }
+
+            if(alreadyDeclared == 1)
+            {
+                break;
+            }
+            tempblock.push(block.pop());
         }
 
-
         // it has not been declared yet, therefore say undeclared.
-        if (isDeclared == false) 
+        if( alreadyDeclared == 0)
         {
-            System.err.println("undeclared variable " + tok.string + 
-                                " on line " + tok.lineNumber);
+            System.err.println("undeclared variable " + tok.string + " on line " + tok.lineNumber);
             System.exit(1);
-        } 
-        // it HAS BEEN declared before.
-        else 
+        }
+        while(!tempblock.empty())
         {
-            // start here.
+            block.push(tempblock.pop());
         }
     }
 
-
-
-    // public void addAssignmentOccurrence(Token tok) 
-    // {
-    //     // go thru every Variable in the varTable,
-    //     for(Variable var : varTable) {
-    //         // and if v.tok is the same as the current token,
-    //         if(var.tok.string.equals(tok.string)) {
-    //             // then I already have a Variable for this.
-    //             // So, iterate over all assignments,
-    //             for(Occurrence occ : var.assignments) {
-    //                 // and check to see if lineNumbers match
-    //                 // for this var. If they do match,
-    //                 if(occ.lineNumber == tok.lineNumber) {
-    //                     // increase the lineCount.
-    //                     occ.lineCount++;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-}
-
+}//eoc
