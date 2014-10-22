@@ -24,7 +24,10 @@ public class Parser {
     }
 
     private void program() {
+        System.out.println("#include <stdio.h>");
+        System.out.println("int main(){");
         block();
+        System.out.println("}");
     }
 
     private void block() {
@@ -39,9 +42,14 @@ public class Parser {
     }
 
     private void declarations() {
+        int reDeclared = 0;
         mustbe(TK.VAR);
         while( is(TK.ID) ) {
-            symTable.newDeclaration(tok);
+            reDeclared = symTable.newDeclaration(tok);
+            if(reDeclared == 0)
+            {
+              System.out.println("int x_" + tok.string + " = -12345;");
+            }
             scan();
         }
         mustbe(TK.RAV);
@@ -66,18 +74,21 @@ public class Parser {
         pdo();
       else if(is(TK.FA)||is(TK.none))
         fa();
+      System.out.println(";");
     }
 
     private void assignment() {
       if(is(TK.ID))
       {
         symTable.isDeclared(tok);
+        System.out.print("x_" + tok.string);
         scan();
       }
       else parse_error("assignment ERROR");
 
       if(is(TK.ASSIGN))
       {
+        System.out.print(" = ");
         scan();
       }
       else parse_error("assignment ERROR");
@@ -86,41 +97,74 @@ public class Parser {
 
     private void print() {
       mustbe(TK.PRINT);
+      System.out.print("printf(\"%d\\n\", ");
       expression();
+      System.out.println(")");
     }
 
     private void pif() {
       mustbe(TK.IF);
+      System.out.print("if");
       guarded_commands();
       mustbe(TK.FI);
     }
 
     private void pdo() {
+      int tempDo = 1;
       mustbe(TK.DO);
+      System.out.print("while(1){ if");
       guarded_commands();
+      System.out.print("else break;}");
       mustbe(TK.OD);
+      tempDo = 0;
     }
 
     private void fa() {
+      Token tempTok = tok; // hang on to the current token!
+      int tempSuchThat = 0;
+      int tempFa = 0;
+      
       mustbe(TK.FA);
       if(is(TK.ID))
       {
         symTable.isDeclared(tok);
+        System.out.print("for(x_"+tok.string);
+        tempTok = tok;
         scan();
       }
       else parse_error("fa ERROR");
+
       if (is(TK.ASSIGN))
+      {
+        System.out.print("=");
         scan();
+      }
       else parse_error("fa ERROR");
+
       expression();
       mustbe(TK.TO);
+      System.out.print(";x_" + tempTok.string);
+      System.out.print("<=");
       expression();
+      System.out.print(";");
+      System.out.print("x_" + tempTok.string);
+      System.out.print("++");
+      System.out.print(")");
+
       if(is(TK.ST))
       {
+        System.out.print("{ if(!(");
         mustbe(TK.ST);
         expression();
+        System.out.print(")) continue;");
+        tempSuchThat = 1;
       }
       commands();
+      if(tempSuchThat == 1)
+      {
+        System.out.print("}");
+        tempSuchThat = 0;
+      }
       mustbe(TK.AF);
     }
 
@@ -129,22 +173,28 @@ public class Parser {
       while(is(TK.BOX))
       {
         scan();
+        System.out.print("else if");
         guarded_command();
       }
       if(is(TK.ELSE)||is(TK.none)){
         mustbe(TK.ELSE);
+        System.out.print("else");
         commands();
       }
     }
     
     private void guarded_command() {
+      System.out.print("(");
       expression();
+      System.out.print(")");
       commands();
     }
 
     private void commands() {
       mustbe(TK.ARROW);
+      System.out.println("{");
       block();
+      System.out.println("}");
     }
 
     private void expression() {
@@ -177,16 +227,22 @@ public class Parser {
     private void factor() {
       if(is(TK.ID))
       {
+        System.out.print(" x_" + tok.string + " ");
         symTable.isUsed(tok);
         scan();
       }
       else if(is(TK.NUM))
+      {
+        System.out.print(" " + tok.string + " ");
         scan();
+      }
       else if(is(TK.LPAREN))
       {
-      mustbe(TK.LPAREN);
-      expression();
-      mustbe(TK.RPAREN);
+        mustbe(TK.LPAREN);
+        System.out.print("(");
+        expression();
+        mustbe(TK.RPAREN);
+        System.out.print(")");
       }
       else
         parse_error("factor");
@@ -194,35 +250,65 @@ public class Parser {
 
     private void relop() {
       if(is(TK.EQ))
+      {
+        System.out.print("==");
         scan();
+      }
       else if(is(TK.LT))
+      {
+        System.out.print("<");
         scan();
+      }
       else if(is(TK.GT))
+      {
+        System.out.print(">");
         scan();
+      }
       else if(is(TK.NE))
+      {
+        System.out.print("!=");
         scan();
+      }
       else if(is(TK.LE))
+      {
+        System.out.print("<=");
         scan();
+      }
       else if(is(TK.GE))
+      {
+        System.out.print(">=");
         scan();
+      }
       else
         parse_error("relop ERROR");
     }
 
     private void addop() {
       if(is(TK.PLUS))
+      {
+        System.out.print("+");
         scan();
+      }
       else if(is(TK.MINUS))
+      {
+        System.out.print("-");
         scan();
+      }
       else
         parse_error("addop ERROR");
     }
 
     private void multop() {
       if(is(TK.TIMES))
+      {
+        System.out.print("*");
         scan();
+      }
       else if(is(TK.DIVIDE))
+      {
+        System.out.print("/");
         scan();
+      }
       else
         parse_error("multop ERROR");
     }
